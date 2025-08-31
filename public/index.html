@@ -312,7 +312,7 @@
 
         const API_BASE_URL = 'https://intrinsic-value-tracker.vercel.app/api';
 
-        // Expanded stock symbols across different sectors (100 stocks)
+        // Stock symbols to track
         const stockSymbols = [
             // Technology
             'AAPL', 'MSFT', 'GOOGL', 'AMZN', 'META', 'TSLA', 'NVDA', 'NFLX', 'ADBE', 'CRM',
@@ -340,7 +340,7 @@
         ];
 
         // Company names mapping
-        const companyNames = {
+const companyNames = {
             // Technology
             'AAPL': 'Apple Inc.', 'MSFT': 'Microsoft Corp.', 'GOOGL': 'Alphabet Inc.', 'AMZN': 'Amazon.com Inc.',
             'META': 'Meta Platforms', 'TSLA': 'Tesla Inc.', 'NVDA': 'NVIDIA Corp.', 'NFLX': 'Netflix Inc.',
@@ -404,19 +404,10 @@
                 const dcfValue = calculateDCFValue(data);
                 const peValue = calculatePEValue(data);
                 const assetValue = calculateAssetValue(data);
-                const ddmValue = calculateDDMValue(data);
                 
-                // Calculate average intrinsic value (exclude DDM from final calculation)
+                // Calculate average intrinsic value and status
                 const avgIntrinsicValue = (dcfValue + peValue + assetValue) / 3;
-                
-                // Fix NaN percentage calculation
-                let percentDiff = ((avgIntrinsicValue - data.currentPrice) / data.currentPrice) * 100;
-                
-                // Ensure percentage is not NaN
-                if (isNaN(percentDiff) || !isFinite(percentDiff)) {
-                    percentDiff = 0;
-                }
-                
+                const percentDiff = ((avgIntrinsicValue - data.currentPrice) / data.currentPrice) * 100;
                 const status = Math.abs(percentDiff) < 10 ? "Fair Value" : 
                              percentDiff > 20 ? "Undervalued" : "Overvalued";
 
@@ -561,7 +552,7 @@
             const tbody = document.getElementById('stockTableBody');
             
             if (stockData.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="8" class="loading"><div class="spinner"></div>Loading stock data...</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="9" class="loading"><div class="spinner"></div>Loading stock data...</td></tr>';
                 return;
             }
 
@@ -649,7 +640,7 @@
                 .catch(error => {
                     console.error('Error fetching stock data:', error);
                     document.getElementById('stockTableBody').innerHTML = 
-                        '<tr><td colspan="8" class="loading" style="color: #f87171;">Error loading data. Please try again or check console for details.</td></tr>';
+                        '<tr><td colspan="9" class="loading" style="color: #f87171;">Error loading data. Please try again or check console for details.</td></tr>';
                 });
         }
 
