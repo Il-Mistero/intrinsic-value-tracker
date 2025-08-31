@@ -282,15 +282,14 @@
                         <th onclick="sortTable(2)">DCF Value <span class="sort-arrow">↕</span></th>
                         <th onclick="sortTable(3)">P/E Value <span class="sort-arrow">↕</span></th>
                         <th onclick="sortTable(4)">Asset Value <span class="sort-arrow">↕</span></th>
-                        <th onclick="sortTable(5)">DDM Value <span class="sort-arrow">↕</span></th>
-                        <th onclick="sortTable(6)">Current Price <span class="sort-arrow">↕</span></th>
-                        <th onclick="sortTable(7)">Status <span class="sort-arrow">↕</span></th>
-                        <th onclick="sortTable(8)">% Difference <span class="sort-arrow">↕</span></th>
+                        <th onclick="sortTable(5)">Current Price <span class="sort-arrow">↕</span></th>
+                        <th onclick="sortTable(6)">Status <span class="sort-arrow">↕</span></th>
+                        <th onclick="sortTable(7)">% Difference <span class="sort-arrow">↕</span></th>
                     </tr>
                 </thead>
                 <tbody id="stockTableBody">
                     <tr>
-                        <td colspan="9" class="loading">
+                        <td colspan="8" class="loading">
                             <div class="spinner"></div>
                             Loading stock data...
                         </td>
@@ -311,40 +310,83 @@
         let sortColumn = 8;
         let sortDirection = -1; // -1 for descending, 1 for ascending
 
-        // Your actual Vercel deployment URL
         const API_BASE_URL = 'https://intrinsic-value-tracker.vercel.app/api';
 
         // Stock symbols to track
-        const stockSymbols = ['AAPL', 'MSFT', 'AMZN', 'TSLA', 'GOOGL', 'META', 'NVDA', 'NFLX', 'ADBE', 'CRM', 'PYPL', 'INTC', 'CSCO', 'ORCL', 'IBM'];
+        const stockSymbols = [
+            // Technology
+            'AAPL', 'MSFT', 'GOOGL', 'AMZN', 'META', 'TSLA', 'NVDA', 'NFLX', 'ADBE', 'CRM',
+            'ORCL', 'IBM', 'INTC', 'CSCO', 'QCOM', 'AMD', 'NOW', 'SNOW', 'PLTR', 'ZM',
+            
+            // Healthcare & Pharmaceuticals
+            'JNJ', 'PFE', 'UNH', 'ABT', 'TMO', 'DHR', 'BMY', 'AMGN', 'GILD', 'BIIB',
+            'MRNA', 'REGN', 'VRTX', 'ILMN', 'ISRG', 'ZTS', 'CVS', 'CI', 'HUM', 'ANTM',
+            
+            // Financial Services
+            'JPM', 'BAC', 'WFC', 'GS', 'MS', 'C', 'USB', 'PNC', 'TFC', 'COF',
+            'AXP', 'BLK', 'SCHW', 'CME', 'ICE', 'SPGI', 'MCO', 'MA', 'V', 'PYPL',
+            
+            // Consumer Goods & Retail
+            'WMT', 'HD', 'PG', 'KO', 'PEP', 'NKE', 'SBUX', 'MCD', 'DIS', 'COST',
+            'TGT', 'LOW', 'TJX', 'DLTR', 'ROST', 'BBY', 'GPS', 'ANF', 'UAA', 'LULU',
+            
+            // Energy & Utilities
+            'XOM', 'CVX', 'COP', 'EOG', 'SLB', 'PSX', 'VLO', 'MPC', 'OXY', 'DVN',
+            'NEE', 'DUK', 'SO', 'D', 'EXC', 'SRE', 'AEP', 'XEL', 'PEG', 'ED',
+            
+            // Industrial & Manufacturing
+            'BA', 'CAT', 'GE', 'MMM', 'HON', 'UPS', 'RTX', 'LMT', 'NOC', 'GD',
+            'FDX', 'UNP', 'CSX', 'NSC', 'DAL', 'UAL', 'AAL', 'LUV', 'JBLU', 'ALK'
+        ];
 
         // Company names mapping
-        const companyNames = {
-            'AAPL': 'Apple Inc.',
-            'MSFT': 'Microsoft Corp.',
-            'AMZN': 'Amazon.com Inc.',
-            'TSLA': 'Tesla Inc.',
-            'GOOGL': 'Alphabet Inc.',
-            'META': 'Meta Platforms',
-            'NVDA': 'NVIDIA Corp.',
-            'NFLX': 'Netflix Inc.',
-            'ADBE': 'Adobe Inc.',
-            'CRM': 'Salesforce Inc.',
-            'PYPL': 'PayPal Holdings',
-            'INTC': 'Intel Corp.',
-            'CSCO': 'Cisco Systems',
-            'ORCL': 'Oracle Corp.',
-            'IBM': 'IBM Corp.'
-        };
+const companyNames = {
+            // Technology
+            'AAPL': 'Apple Inc.', 'MSFT': 'Microsoft Corp.', 'GOOGL': 'Alphabet Inc.', 'AMZN': 'Amazon.com Inc.',
+            'META': 'Meta Platforms', 'TSLA': 'Tesla Inc.', 'NVDA': 'NVIDIA Corp.', 'NFLX': 'Netflix Inc.',
+            'ADBE': 'Adobe Inc.', 'CRM': 'Salesforce Inc.', 'ORCL': 'Oracle Corp.', 'IBM': 'IBM Corp.',
+            'INTC': 'Intel Corp.', 'CSCO': 'Cisco Systems', 'QCOM': 'Qualcomm Inc.', 'AMD': 'Advanced Micro Devices',
+            'NOW': 'ServiceNow Inc.', 'SNOW': 'Snowflake Inc.', 'PLTR': 'Palantir Technologies', 'ZM': 'Zoom Video',
+            
+            // Healthcare
+            'JNJ': 'Johnson & Johnson', 'PFE': 'Pfizer Inc.', 'UNH': 'UnitedHealth Group', 'ABT': 'Abbott Laboratories',
+            'TMO': 'Thermo Fisher Scientific', 'DHR': 'Danaher Corp.', 'BMY': 'Bristol-Myers Squibb', 'AMGN': 'Amgen Inc.',
+            'GILD': 'Gilead Sciences', 'BIIB': 'Biogen Inc.', 'MRNA': 'Moderna Inc.', 'REGN': 'Regeneron Pharmaceuticals',
+            'VRTX': 'Vertex Pharmaceuticals', 'ILMN': 'Illumina Inc.', 'ISRG': 'Intuitive Surgical', 'ZTS': 'Zoetis Inc.',
+            'CVS': 'CVS Health Corp.', 'CI': 'Cigna Corp.', 'HUM': 'Humana Inc.', 'ANTM': 'Anthem Inc.',
+            
+            // Financial
+            'JPM': 'JPMorgan Chase', 'BAC': 'Bank of America', 'WFC': 'Wells Fargo', 'GS': 'Goldman Sachs',
+            'MS': 'Morgan Stanley', 'C': 'Citigroup Inc.', 'USB': 'U.S. Bancorp', 'PNC': 'PNC Financial',
+            'TFC': 'Truist Financial', 'COF': 'Capital One Financial', 'AXP': 'American Express', 'BLK': 'BlackRock Inc.',
+            'SCHW': 'Charles Schwab', 'CME': 'CME Group Inc.', 'ICE': 'Intercontinental Exchange', 'SPGI': 'S&P Global',
+            'MCO': 'Moody\'s Corp.', 'MA': 'Mastercard Inc.', 'V': 'Visa Inc.', 'PYPL': 'PayPal Holdings',
+            
+            // Consumer
+            'WMT': 'Walmart Inc.', 'HD': 'Home Depot', 'PG': 'Procter & Gamble', 'KO': 'Coca-Cola Co.',
+            'PEP': 'PepsiCo Inc.', 'NKE': 'Nike Inc.', 'SBUX': 'Starbucks Corp.', 'MCD': 'McDonald\'s Corp.',
+            'DIS': 'Walt Disney Co.', 'COST': 'Costco Wholesale', 'TGT': 'Target Corp.', 'LOW': 'Lowe\'s Companies',
+            'TJX': 'TJX Companies', 'DLTR': 'Dollar Tree Inc.', 'ROST': 'Ross Stores', 'BBY': 'Best Buy Co.',
+            'GPS': 'Gap Inc.', 'ANF': 'Abercrombie & Fitch', 'UAA': 'Under Armour', 'LULU': 'Lululemon Athletica',
+            
+            // Energy
+            'XOM': 'Exxon Mobil', 'CVX': 'Chevron Corp.', 'COP': 'ConocoPhillips', 'EOG': 'EOG Resources',
+            'SLB': 'Schlumberger Ltd.', 'PSX': 'Phillips 66', 'VLO': 'Valero Energy', 'MPC': 'Marathon Petroleum',
+            'OXY': 'Occidental Petroleum', 'DVN': 'Devon Energy', 'NEE': 'NextEra Energy', 'DUK': 'Duke Energy',
+            'SO': 'Southern Co.', 'D': 'Dominion Energy', 'EXC': 'Exelon Corp.', 'SRE': 'Sempra Energy',
+            'AEP': 'American Electric Power', 'XEL': 'Xcel Energy', 'PEG': 'Public Service Enterprise', 'ED': 'Consolidated Edison',
+            
+            // Industrial
+            'BA': 'Boeing Co.', 'CAT': 'Caterpillar Inc.', 'GE': 'General Electric', 'MMM': '3M Company',
+            'HON': 'Honeywell International', 'UPS': 'United Parcel Service', 'RTX': 'Raytheon Technologies', 'LMT': 'Lockheed Martin',
+            'NOC': 'Northrop Grumman', 'GD': 'General Dynamics', 'FDX': 'FedEx Corp.', 'UNP': 'Union Pacific',
+            'CSX': 'CSX Corp.', 'NSC': 'Norfolk Southern', 'DAL': 'Delta Air Lines', 'UAL': 'United Airlines',
+            'AAL': 'American Airlines', 'LUV': 'Southwest Airlines', 'JBLU': 'JetBlue Airways', 'ALK': 'Alaska Air Group'
+        ];
 
-        // Fetch stock data from Vercel API or fallback
+        // Fetch stock data from Vercel API
         async function fetchStockData(symbol) {
             try {
-                if (USE_FALLBACK || API_BASE_URL.includes('your-app-name')) {
-                    // Fallback to direct Yahoo Finance API calls for testing
-                    return await fetchStockDataFallback(symbol);
-                }
-
-                console.log(`Fetching ${symbol} from Vercel API...`);
                 const response = await fetch(`${API_BASE_URL}/stocks?symbol=${symbol}`, {
                     method: 'GET',
                     headers: {
@@ -352,25 +394,19 @@
                     },
                 });
 
-                console.log(`Response status for ${symbol}:`, response.status);
-
                 if (!response.ok) {
-                    const errorText = await response.text();
-                    console.error(`API Error for ${symbol}:`, errorText);
-                    throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
+                    throw new Error(`HTTP error! status: ${response.status}`);
                 }
 
                 const data = await response.json();
-                console.log(`Data received for ${symbol}:`, data);
 
                 // Calculate intrinsic values using different models
                 const dcfValue = calculateDCFValue(data);
                 const peValue = calculatePEValue(data);
                 const assetValue = calculateAssetValue(data);
-                const ddmValue = calculateDDMValue(data);
                 
                 // Calculate average intrinsic value and status
-                const avgIntrinsicValue = (dcfValue + peValue + assetValue + ddmValue) / 4;
+                const avgIntrinsicValue = (dcfValue + peValue + assetValue) / 3;
                 const percentDiff = ((avgIntrinsicValue - data.currentPrice) / data.currentPrice) * 100;
                 const status = Math.abs(percentDiff) < 10 ? "Fair Value" : 
                              percentDiff > 20 ? "Undervalued" : "Overvalued";
@@ -381,7 +417,6 @@
                     dcfValue: dcfValue,
                     peValue: peValue,
                     assetValue: assetValue,
-                    ddmValue: ddmValue,
                     currentPrice: data.currentPrice,
                     status: status,
                     percentDiff: percentDiff,
@@ -395,125 +430,9 @@
                     dcfValue: 0,
                     peValue: 0,
                     assetValue: 0,
-                    ddmValue: 0,
                     currentPrice: 0,
-                    status: `Error: ${error.message}`,
+                    status: "API Error",
                     percentDiff: 0
-                };
-            }
-        }
-
-        // Fallback function using CORS proxy
-        async function fetchStockDataFallback(symbol) {
-            try {
-                console.log(`Using fallback API for ${symbol}...`);
-                
-                // Using a different CORS proxy that's more reliable
-                const PROXY_URL = 'https://api.allorigins.win/raw?url=';
-                const quoteUrl = `${PROXY_URL}${encodeURIComponent(`https://query1.finance.yahoo.com/v8/finance/chart/${symbol}`)}`;
-                const statsUrl = `${PROXY_URL}${encodeURIComponent(`https://query2.finance.yahoo.com/v10/finance/quoteSummary/${symbol}?modules=summaryDetail,financialData,defaultKeyStatistics`)}`;
-
-                // Fetch basic quote
-                const quoteResponse = await fetch(quoteUrl);
-                if (!quoteResponse.ok) {
-                    throw new Error(`Quote API failed: ${quoteResponse.status}`);
-                }
-                const quoteData = await quoteResponse.json();
-
-                // Fetch financial stats
-                const statsResponse = await fetch(statsUrl);
-                if (!statsResponse.ok) {
-                    throw new Error(`Stats API failed: ${statsResponse.status}`);
-                }
-                const statsData = await statsResponse.json();
-
-                if (!quoteData.chart?.result?.[0]) {
-                    throw new Error('Invalid quote data structure');
-                }
-
-                const quote = quoteData.chart.result[0];
-                const stats = statsData.quoteSummary?.result?.[0] || {};
-
-                // Extract data with fallbacks
-                const currentPrice = quote.meta.regularMarketPrice || quote.meta.previousClose || 100;
-                const peRatio = stats.summaryDetail?.trailingPE?.raw || stats.defaultKeyStatistics?.forwardPE?.raw || 15;
-                const bookValue = stats.defaultKeyStatistics?.bookValue?.raw || currentPrice * 0.6;
-                const eps = stats.defaultKeyStatistics?.trailingEps?.raw || (currentPrice / peRatio);
-                const dividendYield = stats.summaryDetail?.dividendYield?.raw || 0;
-                const dividendRate = stats.summaryDetail?.dividendRate?.raw || 0;
-                const marketCap = stats.summaryDetail?.marketCap?.raw || (currentPrice * 1000000);
-                const freeCashflow = stats.financialData?.freeCashflow?.raw || (marketCap * 0.05);
-                const sharesOutstanding = stats.defaultKeyStatistics?.sharesOutstanding?.raw || (marketCap / currentPrice);
-                const beta = stats.defaultKeyStatistics?.beta?.raw || 1;
-                const profitMargins = stats.financialData?.profitMargins?.raw || 0.1;
-
-                // Create data object similar to Vercel API response
-                const data = {
-                    symbol: symbol.toUpperCase(),
-                    currentPrice,
-                    peRatio,
-                    bookValue,
-                    eps,
-                    dividendYield,
-                    dividendRate,
-                    marketCap,
-                    freeCashflow,
-                    sharesOutstanding,
-                    beta,
-                    profitMargins,
-                    totalRevenue: marketCap * 0.8, // Estimate
-                    priceToSales: 2,
-                    timestamp: new Date().toISOString()
-                };
-
-                // Calculate intrinsic values
-                const dcfValue = calculateDCFValue(data);
-                const peValue = calculatePEValue(data);
-                const assetValue = calculateAssetValue(data);
-                const ddmValue = calculateDDMValue(data);
-                
-                // Calculate average intrinsic value and status
-                const avgIntrinsicValue = (dcfValue + peValue + assetValue + ddmValue) / 4;
-                const percentDiff = ((avgIntrinsicValue - currentPrice) / currentPrice) * 100;
-                const status = Math.abs(percentDiff) < 10 ? "Fair Value" : 
-                             percentDiff > 20 ? "Undervalued" : "Overvalued";
-
-                return {
-                    name: companyNames[symbol] || symbol,
-                    ticker: symbol,
-                    dcfValue: dcfValue,
-                    peValue: peValue,
-                    assetValue: assetValue,
-                    ddmValue: ddmValue,
-                    currentPrice: currentPrice,
-                    status: status,
-                    percentDiff: percentDiff,
-                    rawData: data
-                };
-
-            } catch (error) {
-                console.error(`Fallback error for ${symbol}:`, error);
-                
-                // Return mock data as last resort
-                const mockPrice = 50 + Math.random() * 200;
-                const mockDcf = mockPrice * (0.9 + Math.random() * 0.2);
-                const mockPE = mockPrice * (0.95 + Math.random() * 0.1);
-                const mockAsset = mockPrice * (0.8 + Math.random() * 0.4);
-                const mockDDM = mockPrice * (0.85 + Math.random() * 0.3);
-                
-                const avgIntrinsic = (mockDcf + mockPE + mockAsset + mockDDM) / 4;
-                const percentDiff = ((avgIntrinsic - mockPrice) / mockPrice) * 100;
-
-                return {
-                    name: companyNames[symbol] || symbol,
-                    ticker: symbol,
-                    dcfValue: mockDcf,
-                    peValue: mockPE,
-                    assetValue: mockAsset,
-                    ddmValue: mockDDM,
-                    currentPrice: mockPrice,
-                    status: percentDiff > 15 ? "Undervalued" : percentDiff < -15 ? "Overvalued" : "Fair Value",
-                    percentDiff: percentDiff
                 };
             }
         }
@@ -597,36 +516,28 @@
             return (dividendRate * (1 + dividendGrowthRate)) / (requiredReturn - dividendGrowthRate);
         }
 
-        // Fetch all stock data from Vercel API
+        // Fetch all stock data
         async function fetchAllStockData() {
-            console.log('Fetching data for all stocks...');
-            
             const promises = stockSymbols.map(symbol => fetchStockData(symbol));
             const results = await Promise.allSettled(promises);
             
-            const successfulResults = [];
-            const errors = [];
-            
-            results.forEach((result, index) => {
+            return results.map((result, index) => {
                 if (result.status === 'fulfilled') {
-                    successfulResults.push(result.value);
+                    return result.value;
                 } else {
-                    const symbol = stockSymbols[index];
-                    console.error(`Failed to fetch ${symbol}:`, result.reason);
-                    errors.push(`${symbol}: ${result.reason.message}`);
+                    console.error(`Failed to fetch ${stockSymbols[index]}:`, result.reason);
+                    return {
+                        name: companyNames[stockSymbols[index]] || stockSymbols[index],
+                        ticker: stockSymbols[index],
+                        dcfValue: 0,
+                        peValue: 0,
+                        assetValue: 0,
+                        currentPrice: 0,
+                        status: "Network Error",
+                        percentDiff: 0
+                    };
                 }
             });
-            
-            if (errors.length > 0) {
-                console.warn(`${errors.length} stocks failed to load:`, errors);
-            }
-            
-            if (successfulResults.length === 0) {
-                throw new Error(`All stocks failed to load. Errors: ${errors.join(', ')}`);
-            }
-            
-            console.log(`Successfully loaded ${successfulResults.length} out of ${stockSymbols.length} stocks`);
-            return successfulResults;
         }
 
         function formatCurrency(value) {
@@ -641,7 +552,7 @@
             const tbody = document.getElementById('stockTableBody');
             
             if (stockData.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="9" class="loading"><div class="spinner"></div>Loading stock data...</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="8" class="loading"><div class="spinner"></div>Loading stock data...</td></tr>';
                 return;
             }
 
@@ -656,7 +567,6 @@
                         <td class="price">${formatCurrency(stock.dcfValue)}</td>
                         <td class="price">${formatCurrency(stock.peValue)}</td>
                         <td class="price">${formatCurrency(stock.assetValue)}</td>
-                        <td class="price">${formatCurrency(stock.ddmValue)}</td>
                         <td class="price">${formatCurrency(stock.currentPrice)}</td>
                         <td><span class="${statusClass}">${stock.status}</span></td>
                         <td class="percentage ${percentClass}">${formatPercentage(stock.percentDiff)}</td>
@@ -673,7 +583,7 @@
                 sortDirection = -1;
             }
 
-            const keys = ['name', 'ticker', 'dcfValue', 'peValue', 'assetValue', 'ddmValue', 'currentPrice', 'status', 'percentDiff'];
+            const keys = ['name', 'ticker', 'dcfValue', 'peValue', 'assetValue', 'currentPrice', 'status', 'percentDiff'];
             const key = keys[columnIndex];
 
             stockData.sort((a, b) => {
@@ -719,27 +629,18 @@
         function refreshData() {
             // Show loading state
             document.getElementById('stockTableBody').innerHTML = 
-                '<tr><td colspan="9" class="loading"><div class="spinner"></div>Fetching data from Vercel API...</td></tr>';
+                '<tr><td colspan="8" class="loading"><div class="spinner"></div>Fetching real-time data from Yahoo Finance...</td></tr>';
             
-            console.log('Starting data refresh...');
-            console.log('API URL:', API_BASE_URL);
-            
-            // Fetch data from Vercel API
+            // Fetch real data from Yahoo Finance
             fetchAllStockData()
                 .then(data => {
-                    console.log(`Successfully loaded ${data.length} stocks`);
                     stockData = data;
                     sortTable(sortColumn);
                 })
                 .catch(error => {
                     console.error('Error fetching stock data:', error);
                     document.getElementById('stockTableBody').innerHTML = 
-                        `<tr><td colspan="9" class="loading" style="color: #f87171;">
-                            <strong>API Error:</strong> ${error.message}<br><br>
-                            Make sure your Vercel function is deployed correctly at:<br>
-                            <code style="background:rgba(255,255,255,0.1);padding:2px 4px;border-radius:3px;">${API_BASE_URL}/stocks</code><br><br>
-                            <button onclick="refreshData()" style="margin-top:10px;padding:8px 15px;background:#667eea;color:white;border:none;border-radius:4px;cursor:pointer;">Try Again</button>
-                        </td></tr>`;
+                        '<tr><td colspan="8" class="loading" style="color: #f87171;">Error loading data. Please try again or check console for details.</td></tr>';
                 });
         }
 
