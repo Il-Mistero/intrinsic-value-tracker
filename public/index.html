@@ -406,8 +406,16 @@ const companyNames = {
                 const assetValue = calculateAssetValue(data);
                 
                 // Calculate average intrinsic value and status
-                const avgIntrinsicValue = (dcfValue + peValue + assetValue) / 3;
-                const percentDiff = ((avgIntrinsicValue - data.currentPrice) / data.currentPrice) * 100;
+                const values = [dcfValue, peValue, assetValue].filter(v => v > 0);
+                
+                let avgIntrinsicValue = 0;
+                let percentDiff = 0;
+                
+                if (values.length > 0) {
+                    avgIntrinsicValue = values.reduce((a, b) => a + b, 0) / values.length;
+                    percentDiff = ((avgIntrinsicValue - data.currentPrice) / data.currentPrice) * 100;
+                }
+                
                 const status = Math.abs(percentDiff) < 10 ? "Fair Value" : 
                              percentDiff > 20 ? "Undervalued" : "Overvalued";
 
@@ -437,12 +445,10 @@ const companyNames = {
             }
         }
 
-        // Enhanced DCF calculation using real financial data
         function calculateDCFValue(data) {
             const { freeCashflow, sharesOutstanding, currentPrice } = data;
             
             if (!freeCashflow || !sharesOutstanding) {
-                // Fallback calculation
                 const growthRate = 0.05;
                 const discountRate = 0.1;
                 const projectedEPS = data.eps * Math.pow(1 + growthRate, 5);
@@ -658,5 +664,6 @@ const companyNames = {
     </script>
 </body>
 </html>
+
 
 
