@@ -10,5 +10,10 @@
   "dependencies": {},
   "devDependencies": {
     "vercel": "^32.0.0"
-  }
+  },
+  "dependencies": {
+  "yahoo-finance2": "^2.12.0"
+}
+
+
 }
