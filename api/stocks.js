@@ -1,8 +1,8 @@
-// /api/stocks.js - Fixed Vercel serverless function
+// /api/stocks.js - robust Yahoo quote + fundamentals fetcher (no aggressive defaults)
 export default async function handler(req, res) {
-  // Enable CORS
+  // CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
   if (req.method === 'OPTIONS') {
@@ -11,104 +11,124 @@ export default async function handler(req, res) {
   }
 
   const { symbol } = req.query;
-  if (!symbol) {
-    return res.status(400).json({ error: 'Symbol parameter is required' });
-  }
+  if (!symbol) return res.status(400).json({ error: 'Symbol parameter is required' });
+
+  const ua = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36';
+  const enc = s => encodeURIComponent(String(s).trim().toUpperCase());
 
   try {
-    // ---- Step 1: Get Quote (price, previous close etc.)
-    const quoteUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}`;
-    const quoteResponse = await fetch(quoteUrl, {
-      headers: { 'User-Agent': 'Mozilla/5.0', 'Accept': 'application/json' }
-    });
+    // ---- 1) Get price/chart meta
+    const chartUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${enc(symbol)}`;
+    const chartResp = await fetch(chartUrl, { headers: { 'User-Agent': ua, 'Accept': 'application/json' } });
+    if (!chartResp.ok) throw new Error(`Chart endpoint failed: ${chartResp.status}`);
+    const chartJson = await chartResp.json();
+    const chartResult = chartJson?.chart?.result?.[0];
+    if (!chartResult) throw new Error('No chart result from Yahoo');
 
-    if (!quoteResponse.ok) {
-      throw new Error(`Quote API failed: ${quoteResponse.status} ${quoteResponse.statusText}`);
-    }
+    const meta = chartResult.meta || {};
+    const currentPrice = (meta.regularMarketPrice ?? meta.chartPreviousClose ?? meta.previousClose) ?? null;
+    const previousClose = meta.previousClose ?? null;
 
-    const quoteData = await quoteResponse.json();
-    const result = quoteData?.chart?.result?.[0];
-    if (!result) throw new Error("No chart result data found");
+    // ---- 2) Try quoteSummary with multiple modules (and fallback domains)
+    const modules = [
+      'price',
+      'summaryDetail',
+      'defaultKeyStatistics',
+      'financialData',
+      'earnings',
+      'balanceSheetHistory',
+      'assetProfile'
+    ].join(',');
 
-    const meta = result.meta || {};
-    const currentPrice = meta.regularMarketPrice || meta.previousClose;
+    const endpoints = [
+      `https://query2.finance.yahoo.com/v10/finance/quoteSummary/${enc(symbol)}?modules=${modules}`,
+      `https://query1.finance.yahoo.com/v10/finance/quoteSummary/${enc(symbol)}?modules=${modules}`
+    ];
 
-    if (!currentPrice) throw new Error("No valid price found");
-
-    // ---- Step 2: Get Fundamentals (P/E, Book value, EPS, etc.)
-    const statsUrl = `https://query2.finance.yahoo.com/v10/finance/quoteSummary/${symbol}?modules=summaryDetail,financialData,defaultKeyStatistics,earnings,balanceSheetHistoryQuarterly`;
-    const statsResponse = await fetch(statsUrl, {
-      headers: { 'User-Agent': 'Mozilla/5.0', 'Accept': 'application/json' }
-    });
-
-    let financialData = {};
-    if (statsResponse.ok) {
-      const statsData = await statsResponse.json();
-      const stats = statsData.quoteSummary?.result?.[0];
-
-      if (stats) {
-        financialData = {
-          peRatio: stats.summaryDetail?.trailingPE?.raw ?? stats.defaultKeyStatistics?.forwardPE?.raw,
-          bookValue: stats.defaultKeyStatistics?.bookValue?.raw,
-          eps: stats.defaultKeyStatistics?.trailingEps?.raw,
-          dividendYield: stats.summaryDetail?.dividendYield?.raw,
-          dividendRate: stats.summaryDetail?.dividendRate?.raw,
-          marketCap: stats.summaryDetail?.marketCap?.raw,
-          beta: stats.defaultKeyStatistics?.beta?.raw,
-          freeCashflow: stats.financialData?.freeCashflow?.raw,
-          operatingCashflow: stats.financialData?.operatingCashflow?.raw,
-          totalRevenue: stats.financialData?.totalRevenue?.raw,
-          profitMargins: stats.financialData?.profitMargins?.raw,
-          sharesOutstanding: stats.defaultKeyStatistics?.sharesOutstanding?.raw,
-          enterpriseValue: stats.defaultKeyStatistics?.enterpriseValue?.raw,
-          priceToSales: stats.summaryDetail?.priceToSalesTrailing12Months?.raw,
-          pegRatio: stats.defaultKeyStatistics?.pegRatio?.raw
-        };
+    let stats = null;
+    for (const url of endpoints) {
+      try {
+        const r = await fetch(url, { headers: { 'User-Agent': ua, 'Accept': 'application/json' } });
+        if (!r.ok) {
+          // try next endpoint
+          continue;
+        }
+        const txt = await r.text();
+        let parsed;
+        try { parsed = JSON.parse(txt); } catch (e) { parsed = null; }
+        const candidate = parsed?.quoteSummary?.result?.[0];
+        if (candidate) { stats = candidate; break; }
+      } catch (e) {
+        // continue to next endpoint
       }
     }
 
-    // ---- Step 3: Fallback calculations if API misses some values
-    if (!financialData.eps && financialData.peRatio) {
-      financialData.eps = currentPrice / financialData.peRatio;
-    }
-    if (!financialData.marketCap && financialData.sharesOutstanding) {
-      financialData.marketCap = currentPrice * financialData.sharesOutstanding;
-    }
-    if (!financialData.sharesOutstanding && financialData.marketCap) {
-      financialData.sharesOutstanding = financialData.marketCap / currentPrice;
-    }
-
-    // ---- Step 4: Return structured JSON
-    const stockData = {
-      symbol: symbol.toUpperCase(),
-      currentPrice,
-      previousClose: meta.previousClose,
-      marketCap: financialData.marketCap,
-      peRatio: financialData.peRatio,
-      eps: financialData.eps,
-      bookValue: financialData.bookValue,
-      dividendYield: financialData.dividendYield,
-      dividendRate: financialData.dividendRate,
-      beta: financialData.beta,
-      freeCashflow: financialData.freeCashflow,
-      operatingCashflow: financialData.operatingCashflow,
-      totalRevenue: financialData.totalRevenue,
-      profitMargins: financialData.profitMargins,
-      sharesOutstanding: financialData.sharesOutstanding,
-      enterpriseValue: financialData.enterpriseValue,
-      priceToSales: financialData.priceToSales,
-      pegRatio: financialData.pegRatio,
-      timestamp: new Date().toISOString()
+    // Helper to safely pull .raw when available
+    const raw = (obj) => {
+      if (obj === undefined || obj === null) return null;
+      if (typeof obj === 'object' && 'raw' in obj) return obj.raw;
+      if (typeof obj === 'number' || typeof obj === 'string') return obj;
+      return null;
     };
 
-    res.status(200).json(stockData);
+    // ---- 3) Extract fundamentals (null if not available)
+    const out = {
+      symbol: String(symbol).toUpperCase(),
+      currentPrice: currentPrice ?? null,
+      previousClose: previousClose ?? null,
+      timestamp: new Date().toISOString(),
 
-  } catch (error) {
-    console.error(`Error fetching data for ${symbol}:`, error);
-    res.status(500).json({
-      error: 'Failed to fetch stock data',
-      symbol,
-      message: error.message
-    });
+      // fundamentals (may be null)
+      marketCap: null,
+      peRatio: null,
+      bookValue: null,
+      eps: null,
+      dividendYield: null,
+      dividendRate: null,
+      beta: null,
+      freeCashflow: null,
+      totalRevenue: null,
+      profitMargins: null,
+      operatingCashflow: null,
+      sharesOutstanding: null,
+      enterpriseValue: null,
+      priceToSales: null,
+      pegRatio: null
+    };
+
+    if (stats) {
+      out.peRatio = raw(stats.summaryDetail?.trailingPE) ?? raw(stats.defaultKeyStatistics?.forwardPE) ?? null;
+      out.bookValue = raw(stats.defaultKeyStatistics?.bookValue) ?? null;
+      out.eps = raw(stats.defaultKeyStatistics?.trailingEps) ?? null;
+      out.dividendYield = raw(stats.summaryDetail?.dividendYield) ?? null;
+      out.dividendRate = raw(stats.summaryDetail?.dividendRate) ?? null;
+      out.beta = raw(stats.summaryDetail?.beta) ?? raw(stats.defaultKeyStatistics?.beta) ?? null;
+      out.freeCashflow = raw(stats.financialData?.freeCashflow) ?? null;
+      out.totalRevenue = raw(stats.financialData?.totalRevenue) ?? null;
+      out.profitMargins = raw(stats.financialData?.profitMargins) ?? null;
+      out.operatingCashflow = raw(stats.financialData?.operatingCashflow) ?? null;
+      out.sharesOutstanding = raw(stats.defaultKeyStatistics?.sharesOutstanding) ?? null;
+      out.enterpriseValue = raw(stats.defaultKeyStatistics?.enterpriseValue) ?? null;
+      out.priceToSales = raw(stats.summaryDetail?.priceToSalesTrailing12Months) ?? null;
+      out.pegRatio = raw(stats.defaultKeyStatistics?.pegRatio) ?? null;
+
+      // Try to pull marketCap from 'price' or 'summaryDetail'
+      out.marketCap = raw(stats.price?.marketCap) ?? raw(stats.summaryDetail?.marketCap) ?? out.marketCap;
+    }
+
+    // ---- 4) Reasonable derived values only when source data present
+    if (!out.marketCap && out.sharesOutstanding && out.currentPrice) {
+      out.marketCap = out.sharesOutstanding * out.currentPrice;
+    }
+    if (!out.sharesOutstanding && out.marketCap && out.currentPrice) {
+      out.sharesOutstanding = out.marketCap / out.currentPrice;
+    }
+
+    // NOTE: DO NOT invent bookValue / freeCashflow defaults here — return null instead.
+    res.status(200).json(out);
+
+  } catch (err) {
+    console.error('stocks handler error:', err && err.stack ? err.stack : err);
+    res.status(500).json({ error: 'Failed to fetch stock data', message: err?.message ?? String(err) });
   }
 }
