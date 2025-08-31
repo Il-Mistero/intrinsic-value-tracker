@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Intrinsic Value Tracker</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%);
+            color: #ffffff;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            position: relative;
+        }
+
+        .title {
+            font-size: 3rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #a0a0c9;
+            font-size: 1.1rem;
+            margin-bottom: 20px;
+        }
+
+        .status-bar {
+            background: rgba(102, 126, 234, 0.1);
+            border: 1px solid rgba(102, 126, 234, 0.3);
+            border-radius: 12px;
+            padding: 12px 20px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 30px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #4ade80;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .search-box {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(102, 126, 234, 0.3);
+            border-radius: 8px;
+            padding: 10px 15px;
+            color: white;
+            width: 300px;
+            font-size: 14px;
+        }
+
+        .search-box::placeholder {
+            color: #a0a0c9;
+        }
+
+        .refresh-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 8px;
+            padding: 10px 20px;
+            color: white;
+            cursor: pointer;
+            font-weight: 600;
+            transition: transform 0.2s;
+        }
+
+        .refresh-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .table-container {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            overflow: hidden;
+            border: 1px solid rgba(102, 126, 234, 0.2);
+            backdrop-filter: blur(10px);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.3) 0%, rgba(118, 75, 162, 0.3) 100%);
+        }
+
+        th, td {
+            padding: 15px 12px;
+            text-align: left;
+            border-bottom: 1px solid rgba(102, 126, 234, 0.1);
+        }
+
+        th {
+            font-weight: 600;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            cursor: pointer;
+            transition: background 0.2s;
+            position: relative;
+        }
+
+        th:hover {
+            background: rgba(102, 126, 234, 0.2);
+        }
+
+        .sort-arrow {
+            position: absolute;
+            right: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            opacity: 0.5;
+            font-size: 12px;
+        }
+
+        tbody tr {
+            transition: background 0.2s;
+        }
+
+        tbody tr:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .ticker {
+            font-family: monospace;
+            font-weight: 600;
+            color: #667eea;
+        }
+
+        .price {
+            font-weight: 600;
+            font-family: monospace;
+        }
+
+        .status-undervalued {
+            background: rgba(74, 222, 128, 0.2);
+            color: #4ade80;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .status-overvalued {
+            background: rgba(248, 113, 113, 0.2);
+            color: #f87171;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .percentage {
+            font-weight: 600;
+            font-family: monospace;
+        }
+
+        .percentage.positive {
+            color: #4ade80;
+        }
+
+        .percentage.negative {
+            color: #f87171;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #a0a0c9;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(102, 126, 234, 0.3);
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            color: #a0a0c9;
+            font-size: 0.9rem;
+        }
+
+        @media (max-width: 768px) {
+            .title {
+                font-size: 2rem;
+            }
+            
+            .controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .search-box {
+                width: 100%;
+            }
+            
+            .table-container {
+                overflow-x: auto;
+            }
+            
+            th, td {
+                padding: 10px 8px;
+                font-size: 0.9rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1 class="title">Intrinsic Value Tracker</h1>
+            <p class="subtitle">Real-time stock analysis with multiple valuation models</p>
+            <div class="status-bar">
+                <div class="status-dot"></div>
+                <span>Real-time Data • Click refresh to update</span>
+            </div>
+        </header>
+
+        <div class="controls">
+            <input type="text" class="search-box" placeholder="Search stocks..." id="searchInput">
+            <button class="refresh-btn" onclick="refreshData()">🔄 Refresh Data</button>
+        </div>
+
+        <div class="table-container">
+            <table id="stockTable">
+                <thead>
+                    <tr>
+                        <th onclick="sortTable(0)">Company Name <span class="sort-arrow">↕</span></th>
+                        <th onclick="sortTable(1)">Ticker <span class="sort-arrow">↕</span></th>
+                        <th onclick="sortTable(2)">DCF Value <span class="sort-arrow">↕</span></th>
+                        <th onclick="sortTable(3)">P/E Value <span class="sort-arrow">↕</span></th>
+                        <th onclick="sortTable(4)">Asset Value <span class="sort-arrow">↕</span></th>
+                        <th onclick="sortTable(5)">DDM Value <span class="sort-arrow">↕</span></th>
+                        <th onclick="sortTable(6)">Current Price <span class="sort-arrow">↕</span></th>
+                        <th onclick="sortTable(7)">Status <span class="sort-arrow">↕</span></th>
+                        <th onclick="sortTable(8)">% Difference <span class="sort-arrow">↕</span></th>
+                    </tr>
+                </thead>
+                <tbody id="stockTableBody">
+                    <tr>
+                        <td colspan="9" class="loading">
+                            <div class="spinner"></div>
+                            Loading stock data...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <footer class="footer">
+            <p>Click refresh button to update data • Powered by Yahoo Finance API</p>
+            <p>Disclaimer: This is for educational purposes only. Not financial advice.</p>
+        </footer>
+    </div>
+
+    <script>
+        // Real Yahoo Finance data integration via Vercel API
+        let stockData = [];
+        let sortColumn = 8;
+        let sortDirection = -1; // -1 for descending, 1 for ascending
+
+        // Replace with your Vercel deployment URL
+        const API_BASE_URL = 'https://your-app-name.vercel.app/api';
+        // For local development, use: const API_BASE_URL = 'http://localhost:3000/api';
+
+        // Stock symbols to track
+        const stockSymbols = ['AAPL', 'MSFT', 'AMZN', 'TSLA', 'GOOGL', 'META', 'NVDA', 'NFLX', 'ADBE', 'CRM', 'PYPL', 'INTC', 'CSCO', 'ORCL', 'IBM'];
+
+        // Company names mapping
+        const companyNames = {
+            'AAPL': 'Apple Inc.',
+            'MSFT': 'Microsoft Corp.',
+            'AMZN': 'Amazon.com Inc.',
+            'TSLA': 'Tesla Inc.',
+            'GOOGL': 'Alphabet Inc.',
+            'META': 'Meta Platforms',
+            'NVDA': 'NVIDIA Corp.',
+            'NFLX': 'Netflix Inc.',
+            'ADBE': 'Adobe Inc.',
+            'CRM': 'Salesforce Inc.',
+            'PYPL': 'PayPal Holdings',
+            'INTC': 'Intel Corp.',
+            'CSCO': 'Cisco Systems',
+            'ORCL': 'Oracle Corp.',
+            'IBM': 'IBM Corp.'
+        };
+
+        // Fetch stock data from Vercel API
+        async function fetchStockData(symbol) {
+            try {
+                const response = await fetch(`${API_BASE_URL}/stocks?symbol=${symbol}`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+
+                // Calculate intrinsic values using different models
+                const dcfValue = calculateDCFValue(data);
+                const peValue = calculatePEValue(data);
+                const assetValue = calculateAssetValue(data);
+                const ddmValue = calculateDDMValue(data);
+                
+                // Calculate average intrinsic value and status
+                const avgIntrinsicValue = (dcfValue + peValue + assetValue + ddmValue) / 4;
+                const percentDiff = ((avgIntrinsicValue - data.currentPrice) / data.currentPrice) * 100;
+                const status = Math.abs(percentDiff) < 10 ? "Fair Value" : 
+                             percentDiff > 20 ? "Undervalued" : "Overvalued";
+
+                return {
+                    name: companyNames[symbol] || symbol,
+                    ticker: symbol,
+                    dcfValue: dcfValue,
+                    peValue: peValue,
+                    assetValue: assetValue,
+                    ddmValue: ddmValue,
+                    currentPrice: data.currentPrice,
+                    status: status,
+                    percentDiff: percentDiff,
+                    rawData: data // Store raw data for debugging
+                };
+            } catch (error) {
+                console.error(`Error fetching data for ${symbol}:`, error);
+                return {
+                    name: companyNames[symbol] || symbol,
+                    ticker: symbol,
+                    dcfValue: 0,
+                    peValue: 0,
+                    assetValue: 0,
+                    ddmValue: 0,
+                    currentPrice: 0,
+                    status: "API Error",
+                    percentDiff: 0
+                };
+            }
+        }
+
+        // Enhanced DCF calculation using real financial data
+        function calculateDCFValue(data) {
+            const { freeCashflow, sharesOutstanding, currentPrice } = data;
+            
+            if (!freeCashflow || !sharesOutstanding) {
+                // Fallback calculation
+                const growthRate = 0.05;
+                const discountRate = 0.1;
+                const projectedEPS = data.eps * Math.pow(1 + growthRate, 5);
+                const terminalValue = projectedEPS / (discountRate - 0.02);
+                return terminalValue * 0.8;
+            }
+
+            const fcfPerShare = freeCashflow / sharesOutstanding;
+            const growthRate = Math.max(0.02, Math.min(0.15, data.profitMargins || 0.05));
+            const discountRate = 0.08 + (data.beta || 1) * 0.06; // CAPM-based discount rate
+            
+            let dcfValue = 0;
+            // 5-year projection
+            for (let year = 1; year <= 5; year++) {
+                const projectedFCF = fcfPerShare * Math.pow(1 + growthRate, year);
+                dcfValue += projectedFCF / Math.pow(1 + discountRate, year);
+            }
+            
+            // Terminal value
+            const terminalGrowth = 0.02;
+            const terminalFCF = fcfPerShare * Math.pow(1 + growthRate, 5) * (1 + terminalGrowth);
+            const terminalValue = (terminalFCF / (discountRate - terminalGrowth)) / Math.pow(1 + discountRate, 5);
+            
+            return dcfValue + terminalValue;
+        }
+
+        // Enhanced P/E based valuation
+        function calculatePEValue(data) {
+            const { eps, peRatio, currentPrice } = data;
+            
+            if (!eps || eps <= 0) return currentPrice * 0.9;
+            
+            // Use industry median P/E or conservative estimate
+            const fairPE = Math.min(25, Math.max(12, peRatio * 0.8)); // Conservative approach
+            return eps * fairPE;
+        }
+
+        // Enhanced asset-based valuation
+        function calculateAssetValue(data) {
+            const { bookValue, priceToSales, totalRevenue, sharesOutstanding } = data;
+            
+            if (bookValue > 0) {
+                // For asset-heavy companies, use book value with premium
+                return bookValue * 1.1;
+            } else if (totalRevenue && sharesOutstanding) {
+                // For growth companies, use revenue multiple
+                const revenuePerShare = totalRevenue / sharesOutstanding;
+                const industryPSRatio = 3; // Conservative price-to-sales ratio
+                return revenuePerShare * industryPSRatio;
+            }
+            
+            return data.currentPrice * 0.8; // Fallback
+        }
+
+        // Enhanced Dividend Discount Model
+        function calculateDDMValue(data) {
+            const { dividendRate, dividendYield, currentPrice, beta } = data;
+            
+            if (!dividendRate || dividendRate <= 0) {
+                // For non-dividend stocks, estimate based on earnings
+                return data.eps * 12; // Simple earnings multiple
+            }
+            
+            const dividendGrowthRate = Math.max(0.01, Math.min(0.08, 0.03)); // 1-8% growth
+            const requiredReturn = 0.04 + (beta || 1) * 0.06; // Risk-adjusted return
+            
+            if (requiredReturn <= dividendGrowthRate) {
+                return currentPrice * 1.1; // Fallback if model breaks down
+            }
+            
+            return (dividendRate * (1 + dividendGrowthRate)) / (requiredReturn - dividendGrowthRate);
+        }
+
+        // Fetch all stock data
+        async function fetchAllStockData() {
+            const promises = stockSymbols.map(symbol => fetchStockData(symbol));
+            const results = await Promise.allSettled(promises);
+            
+            return results.map((result, index) => {
+                if (result.status === 'fulfilled') {
+                    return result.value;
+                } else {
+                    console.error(`Failed to fetch ${stockSymbols[index]}:`, result.reason);
+                    return {
+                        name: companyNames[stockSymbols[index]] || stockSymbols[index],
+                        ticker: stockSymbols[index],
+                        dcfValue: 0,
+                        peValue: 0,
+                        assetValue: 0,
+                        ddmValue: 0,
+                        currentPrice: 0,
+                        status: "Network Error",
+                        percentDiff: 0
+                    };
+                }
+            });
+        }
+
+        function formatCurrency(value) {
+            return "$" + value.toFixed(2);
+        }
+
+        function formatPercentage(value) {
+            return (value > 0 ? "+" : "") + value.toFixed(1) + "%";
+        }
+
+        function renderTable() {
+            const tbody = document.getElementById('stockTableBody');
+            
+            if (stockData.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="9" class="loading"><div class="spinner"></div>Loading stock data...</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = stockData.map(stock => {
+                const percentClass = stock.percentDiff > 0 ? 'positive' : 'negative';
+                const statusClass = stock.status === 'Undervalued' ? 'status-undervalued' : 'status-overvalued';
+                
+                return `
+                    <tr>
+                        <td>${stock.name}</td>
+                        <td class="ticker">${stock.ticker}</td>
+                        <td class="price">${formatCurrency(stock.dcfValue)}</td>
+                        <td class="price">${formatCurrency(stock.peValue)}</td>
+                        <td class="price">${formatCurrency(stock.assetValue)}</td>
+                        <td class="price">${formatCurrency(stock.ddmValue)}</td>
+                        <td class="price">${formatCurrency(stock.currentPrice)}</td>
+                        <td><span class="${statusClass}">${stock.status}</span></td>
+                        <td class="percentage ${percentClass}">${formatPercentage(stock.percentDiff)}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function sortTable(columnIndex) {
+            if (sortColumn === columnIndex) {
+                sortDirection *= -1;
+            } else {
+                sortColumn = columnIndex;
+                sortDirection = -1;
+            }
+
+            const keys = ['name', 'ticker', 'dcfValue', 'peValue', 'assetValue', 'ddmValue', 'currentPrice', 'status', 'percentDiff'];
+            const key = keys[columnIndex];
+
+            stockData.sort((a, b) => {
+                let aVal = a[key];
+                let bVal = b[key];
+
+                // Handle numeric vs string comparison
+                if (typeof aVal === 'string' && typeof bVal === 'string') {
+                    aVal = aVal.toLowerCase();
+                    bVal = bVal.toLowerCase();
+                }
+
+                if (aVal < bVal) return -1 * sortDirection;
+                if (aVal > bVal) return 1 * sortDirection;
+                return 0;
+            });
+
+            renderTable();
+            updateSortArrows();
+        }
+
+        function updateSortArrows() {
+            const arrows = document.querySelectorAll('.sort-arrow');
+            arrows.forEach((arrow, index) => {
+                if (index === sortColumn) {
+                    arrow.textContent = sortDirection === -1 ? '↓' : '↑';
+                } else {
+                    arrow.textContent = '↕';
+                }
+            });
+        }
+
+        function filterTable() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const rows = document.querySelectorAll('#stockTableBody tr');
+            
+            rows.forEach(row => {
+                const text = row.textContent.toLowerCase();
+                row.style.display = text.includes(searchTerm) ? '' : 'none';
+            });
+        }
+
+        function refreshData() {
+            // Show loading state
+            document.getElementById('stockTableBody').innerHTML = 
+                '<tr><td colspan="9" class="loading"><div class="spinner"></div>Fetching real-time data from Yahoo Finance...</td></tr>';
+            
+            // Fetch real data from Yahoo Finance
+            fetchAllStockData()
+                .then(data => {
+                    stockData = data;
+                    sortTable(sortColumn);
+                })
+                .catch(error => {
+                    console.error('Error fetching stock data:', error);
+                    document.getElementById('stockTableBody').innerHTML = 
+                        '<tr><td colspan="9" class="loading" style="color: #f87171;">Error loading data. Please try again or check console for details.</td></tr>';
+                });
+        }
+
+        // Initialize the application
+        function init() {
+            // Load initial data from Yahoo Finance
+            refreshData();
+            
+            // Set up search functionality
+            document.getElementById('searchInput').addEventListener('input', filterTable);
+        }
+
+        // Start the application
+        init();
+    </script>
+</body>
+</html>
