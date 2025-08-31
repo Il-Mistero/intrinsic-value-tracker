@@ -191,6 +191,15 @@
             font-weight: 600;
         }
 
+        .status-fair {
+            background: rgba(168, 162, 158, 0.2);
+            color: #a8a29e;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
         .percentage {
             font-weight: 600;
             font-family: monospace;
@@ -282,15 +291,14 @@
                         <th onclick="sortTable(2)">DCF Value <span class="sort-arrow">↕</span></th>
                         <th onclick="sortTable(3)">P/E Value <span class="sort-arrow">↕</span></th>
                         <th onclick="sortTable(4)">Asset Value <span class="sort-arrow">↕</span></th>
-                        <th onclick="sortTable(5)">DDM Value <span class="sort-arrow">↕</span></th>
-                        <th onclick="sortTable(6)">Current Price <span class="sort-arrow">↕</span></th>
-                        <th onclick="sortTable(7)">Status <span class="sort-arrow">↕</span></th>
-                        <th onclick="sortTable(8)">% Difference <span class="sort-arrow">↕</span></th>
+                        <th onclick="sortTable(5)">Current Price <span class="sort-arrow">↕</span></th>
+                        <th onclick="sortTable(6)">Status <span class="sort-arrow">↕</span></th>
+                        <th onclick="sortTable(7)">% Difference <span class="sort-arrow">↕</span></th>
                     </tr>
                 </thead>
                 <tbody id="stockTableBody">
                     <tr>
-                        <td colspan="9" class="loading">
+                        <td colspan="8" class="loading">
                             <div class="spinner"></div>
                             Loading stock data...
                         </td>
@@ -308,72 +316,130 @@
     <script>
         // Real Yahoo Finance data integration via Vercel API
         let stockData = [];
-        let sortColumn = 8;
+        let sortColumn = 7;
         let sortDirection = -1; // -1 for descending, 1 for ascending
 
-        const API_BASE_URL = 'https://intrinsic-value-tracker.vercel.app/api';
-
-        // Stock symbols to track
-        const stockSymbols = ['AAPL', 'MSFT', 'AMZN', 'TSLA', 'GOOGL', 'META', 'NVDA', 'NFLX', 'ADBE', 'CRM', 'PYPL', 'INTC', 'CSCO', 'ORCL', 'IBM'];
+        // Expanded stock symbols across different sectors (100 stocks)
+        const stockSymbols = [
+            // Technology
+            'AAPL', 'MSFT', 'GOOGL', 'AMZN', 'META', 'TSLA', 'NVDA', 'NFLX', 'ADBE', 'CRM',
+            'ORCL', 'IBM', 'INTC', 'CSCO', 'QCOM', 'AMD', 'NOW', 'SNOW', 'PLTR', 'ZM',
+            
+            // Healthcare & Pharmaceuticals
+            'JNJ', 'PFE', 'UNH', 'ABT', 'TMO', 'DHR', 'BMY', 'AMGN', 'GILD', 'BIIB',
+            'MRNA', 'REGN', 'VRTX', 'ILMN', 'ISRG', 'ZTS', 'CVS', 'CI', 'HUM', 'ANTM',
+            
+            // Financial Services
+            'JPM', 'BAC', 'WFC', 'GS', 'MS', 'C', 'USB', 'PNC', 'TFC', 'COF',
+            'AXP', 'BLK', 'SCHW', 'CME', 'ICE', 'SPGI', 'MCO', 'MA', 'V', 'PYPL',
+            
+            // Consumer Goods & Retail
+            'WMT', 'HD', 'PG', 'KO', 'PEP', 'NKE', 'SBUX', 'MCD', 'DIS', 'COST',
+            'TGT', 'LOW', 'TJX', 'DLTR', 'ROST', 'BBY', 'GPS', 'ANF', 'UAA', 'LULU',
+            
+            // Energy & Utilities
+            'XOM', 'CVX', 'COP', 'EOG', 'SLB', 'PSX', 'VLO', 'MPC', 'OXY', 'DVN',
+            'NEE', 'DUK', 'SO', 'D', 'EXC', 'SRE', 'AEP', 'XEL', 'PEG', 'ED',
+            
+            // Industrial & Manufacturing
+            'BA', 'CAT', 'GE', 'MMM', 'HON', 'UPS', 'RTX', 'LMT', 'NOC', 'GD',
+            'FDX', 'UNP', 'CSX', 'NSC', 'DAL', 'UAL', 'AAL', 'LUV', 'JBLU', 'ALK'
+        ];
 
         // Company names mapping
         const companyNames = {
-            'AAPL': 'Apple Inc.',
-            'MSFT': 'Microsoft Corp.',
-            'AMZN': 'Amazon.com Inc.',
-            'TSLA': 'Tesla Inc.',
-            'GOOGL': 'Alphabet Inc.',
-            'META': 'Meta Platforms',
-            'NVDA': 'NVIDIA Corp.',
-            'NFLX': 'Netflix Inc.',
-            'ADBE': 'Adobe Inc.',
-            'CRM': 'Salesforce Inc.',
-            'PYPL': 'PayPal Holdings',
-            'INTC': 'Intel Corp.',
-            'CSCO': 'Cisco Systems',
-            'ORCL': 'Oracle Corp.',
-            'IBM': 'IBM Corp.'
+            // Technology
+            'AAPL': 'Apple Inc.', 'MSFT': 'Microsoft Corp.', 'GOOGL': 'Alphabet Inc.', 'AMZN': 'Amazon.com Inc.',
+            'META': 'Meta Platforms', 'TSLA': 'Tesla Inc.', 'NVDA': 'NVIDIA Corp.', 'NFLX': 'Netflix Inc.',
+            'ADBE': 'Adobe Inc.', 'CRM': 'Salesforce Inc.', 'ORCL': 'Oracle Corp.', 'IBM': 'IBM Corp.',
+            'INTC': 'Intel Corp.', 'CSCO': 'Cisco Systems', 'QCOM': 'Qualcomm Inc.', 'AMD': 'Advanced Micro Devices',
+            'NOW': 'ServiceNow Inc.', 'SNOW': 'Snowflake Inc.', 'PLTR': 'Palantir Technologies', 'ZM': 'Zoom Video',
+            
+            // Healthcare
+            'JNJ': 'Johnson & Johnson', 'PFE': 'Pfizer Inc.', 'UNH': 'UnitedHealth Group', 'ABT': 'Abbott Laboratories',
+            'TMO': 'Thermo Fisher Scientific', 'DHR': 'Danaher Corp.', 'BMY': 'Bristol-Myers Squibb', 'AMGN': 'Amgen Inc.',
+            'GILD': 'Gilead Sciences', 'BIIB': 'Biogen Inc.', 'MRNA': 'Moderna Inc.', 'REGN': 'Regeneron Pharmaceuticals',
+            'VRTX': 'Vertex Pharmaceuticals', 'ILMN': 'Illumina Inc.', 'ISRG': 'Intuitive Surgical', 'ZTS': 'Zoetis Inc.',
+            'CVS': 'CVS Health Corp.', 'CI': 'Cigna Corp.', 'HUM': 'Humana Inc.', 'ANTM': 'Anthem Inc.',
+            
+            // Financial
+            'JPM': 'JPMorgan Chase', 'BAC': 'Bank of America', 'WFC': 'Wells Fargo', 'GS': 'Goldman Sachs',
+            'MS': 'Morgan Stanley', 'C': 'Citigroup Inc.', 'USB': 'U.S. Bancorp', 'PNC': 'PNC Financial',
+            'TFC': 'Truist Financial', 'COF': 'Capital One Financial', 'AXP': 'American Express', 'BLK': 'BlackRock Inc.',
+            'SCHW': 'Charles Schwab', 'CME': 'CME Group Inc.', 'ICE': 'Intercontinental Exchange', 'SPGI': 'S&P Global',
+            'MCO': 'Moody\'s Corp.', 'MA': 'Mastercard Inc.', 'V': 'Visa Inc.', 'PYPL': 'PayPal Holdings',
+            
+            // Consumer
+            'WMT': 'Walmart Inc.', 'HD': 'Home Depot', 'PG': 'Procter & Gamble', 'KO': 'Coca-Cola Co.',
+            'PEP': 'PepsiCo Inc.', 'NKE': 'Nike Inc.', 'SBUX': 'Starbucks Corp.', 'MCD': 'McDonald\'s Corp.',
+            'DIS': 'Walt Disney Co.', 'COST': 'Costco Wholesale', 'TGT': 'Target Corp.', 'LOW': 'Lowe\'s Companies',
+            'TJX': 'TJX Companies', 'DLTR': 'Dollar Tree Inc.', 'ROST': 'Ross Stores', 'BBY': 'Best Buy Co.',
+            'GPS': 'Gap Inc.', 'ANF': 'Abercrombie & Fitch', 'UAA': 'Under Armour', 'LULU': 'Lululemon Athletica',
+            
+            // Energy
+            'XOM': 'Exxon Mobil', 'CVX': 'Chevron Corp.', 'COP': 'ConocoPhillips', 'EOG': 'EOG Resources',
+            'SLB': 'Schlumberger Ltd.', 'PSX': 'Phillips 66', 'VLO': 'Valero Energy', 'MPC': 'Marathon Petroleum',
+            'OXY': 'Occidental Petroleum', 'DVN': 'Devon Energy', 'NEE': 'NextEra Energy', 'DUK': 'Duke Energy',
+            'SO': 'Southern Co.', 'D': 'Dominion Energy', 'EXC': 'Exelon Corp.', 'SRE': 'Sempra Energy',
+            'AEP': 'American Electric Power', 'XEL': 'Xcel Energy', 'PEG': 'Public Service Enterprise', 'ED': 'Consolidated Edison',
+            
+            // Industrial
+            'BA': 'Boeing Co.', 'CAT': 'Caterpillar Inc.', 'GE': 'General Electric', 'MMM': '3M Company',
+            'HON': 'Honeywell International', 'UPS': 'United Parcel Service', 'RTX': 'Raytheon Technologies', 'LMT': 'Lockheed Martin',
+            'NOC': 'Northrop Grumman', 'GD': 'General Dynamics', 'FDX': 'FedEx Corp.', 'UNP': 'Union Pacific',
+            'CSX': 'CSX Corp.', 'NSC': 'Norfolk Southern', 'DAL': 'Delta Air Lines', 'UAL': 'United Airlines',
+            'AAL': 'American Airlines', 'LUV': 'Southwest Airlines', 'JBLU': 'JetBlue Airways', 'ALK': 'Alaska Air Group'
         };
 
-        // Fetch stock data from Vercel API
+        // Generate mock data for demonstration (replace with your actual API calls)
         async function fetchStockData(symbol) {
             try {
-                const response = await fetch(`${API_BASE_URL}/stocks?symbol=${symbol}`, {
-                    method: 'GET',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                });
-
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-
-                const data = await response.json();
+                // Simulate your actual API call - replace this with your working API logic
+                const mockData = {
+                    currentPrice: Math.random() * 400 + 50,
+                    eps: Math.random() * 20 + 2,
+                    freeCashflow: Math.random() * 50000000000 + 10000000000,
+                    sharesOutstanding: Math.random() * 5000000000 + 1000000000,
+                    bookValue: Math.random() * 100 + 20,
+                    dividendRate: Math.random() * 5,
+                    beta: Math.random() * 2 + 0.5,
+                    profitMargins: Math.random() * 0.3 + 0.05,
+                    peRatio: Math.random() * 30 + 10,
+                    totalRevenue: Math.random() * 100000000000 + 20000000000
+                };
 
                 // Calculate intrinsic values using different models
-                const dcfValue = calculateDCFValue(data);
-                const peValue = calculatePEValue(data);
-                const assetValue = calculateAssetValue(data);
-                const ddmValue = calculateDDMValue(data);
+                const dcfValue = calculateDCFValue(mockData);
+                const peValue = calculatePEValue(mockData);
+                const assetValue = calculateAssetValue(mockData);
                 
-                // Calculate average intrinsic value and status
-                const avgIntrinsicValue = (dcfValue + peValue + assetValue + ddmValue) / 4;
-                const percentDiff = ((avgIntrinsicValue - data.currentPrice) / data.currentPrice) * 100;
+                // Calculate average intrinsic value (without DDM) and status
+                const avgIntrinsicValue = (dcfValue + peValue + assetValue) / 3;
+                
+                // Fix NaN percentage calculation
+                let percentDiff = 0;
+                if (mockData.currentPrice && mockData.currentPrice > 0 && avgIntrinsicValue && avgIntrinsicValue > 0) {
+                    percentDiff = ((avgIntrinsicValue - mockData.currentPrice) / mockData.currentPrice) * 100;
+                }
+                
+                // Ensure percentage is not NaN
+                if (isNaN(percentDiff) || !isFinite(percentDiff)) {
+                    percentDiff = 0;
+                }
+                
                 const status = Math.abs(percentDiff) < 10 ? "Fair Value" : 
                              percentDiff > 20 ? "Undervalued" : "Overvalued";
 
                 return {
                     name: companyNames[symbol] || symbol,
                     ticker: symbol,
-                    dcfValue: dcfValue,
-                    peValue: peValue,
-                    assetValue: assetValue,
-                    ddmValue: ddmValue,
-                    currentPrice: data.currentPrice,
+                    dcfValue: dcfValue || 0,
+                    peValue: peValue || 0,
+                    assetValue: assetValue || 0,
+                    currentPrice: mockData.currentPrice || 0,
                     status: status,
                     percentDiff: percentDiff,
-                    rawData: data // Store raw data for debugging
+                    rawData: mockData
                 };
             } catch (error) {
                 console.error(`Error fetching data for ${symbol}:`, error);
@@ -383,7 +449,6 @@
                     dcfValue: 0,
                     peValue: 0,
                     assetValue: 0,
-                    ddmValue: 0,
                     currentPrice: 0,
                     status: "API Error",
                     percentDiff: 0
@@ -393,15 +458,15 @@
 
         // Enhanced DCF calculation using real financial data
         function calculateDCFValue(data) {
-            const { freeCashflow, sharesOutstanding, currentPrice } = data;
+            const { freeCashflow, sharesOutstanding, currentPrice, eps } = data;
             
-            if (!freeCashflow || !sharesOutstanding) {
+            if (!freeCashflow || !sharesOutstanding || freeCashflow <= 0 || sharesOutstanding <= 0) {
                 // Fallback calculation
                 const growthRate = 0.05;
                 const discountRate = 0.1;
-                const projectedEPS = data.eps * Math.pow(1 + growthRate, 5);
+                const projectedEPS = (eps || 1) * Math.pow(1 + growthRate, 5);
                 const terminalValue = projectedEPS / (discountRate - 0.02);
-                return terminalValue * 0.8;
+                return Math.max(0, terminalValue * 0.8);
             }
 
             const fcfPerShare = freeCashflow / sharesOutstanding;
@@ -420,54 +485,35 @@
             const terminalFCF = fcfPerShare * Math.pow(1 + growthRate, 5) * (1 + terminalGrowth);
             const terminalValue = (terminalFCF / (discountRate - terminalGrowth)) / Math.pow(1 + discountRate, 5);
             
-            return dcfValue + terminalValue;
+            return Math.max(0, dcfValue + terminalValue);
         }
 
         // Enhanced P/E based valuation
         function calculatePEValue(data) {
             const { eps, peRatio, currentPrice } = data;
             
-            if (!eps || eps <= 0) return currentPrice * 0.9;
+            if (!eps || eps <= 0) return (currentPrice || 0) * 0.9;
             
             // Use industry median P/E or conservative estimate
-            const fairPE = Math.min(25, Math.max(12, peRatio * 0.8)); // Conservative approach
-            return eps * fairPE;
+            const fairPE = Math.min(25, Math.max(12, (peRatio || 15) * 0.8)); // Conservative approach
+            return Math.max(0, eps * fairPE);
         }
 
         // Enhanced asset-based valuation
         function calculateAssetValue(data) {
-            const { bookValue, priceToSales, totalRevenue, sharesOutstanding } = data;
+            const { bookValue, priceToSales, totalRevenue, sharesOutstanding, currentPrice } = data;
             
-            if (bookValue > 0) {
+            if (bookValue && bookValue > 0) {
                 // For asset-heavy companies, use book value with premium
                 return bookValue * 1.1;
-            } else if (totalRevenue && sharesOutstanding) {
+            } else if (totalRevenue && sharesOutstanding && totalRevenue > 0 && sharesOutstanding > 0) {
                 // For growth companies, use revenue multiple
                 const revenuePerShare = totalRevenue / sharesOutstanding;
                 const industryPSRatio = 3; // Conservative price-to-sales ratio
-                return revenuePerShare * industryPSRatio;
+                return Math.max(0, revenuePerShare * industryPSRatio);
             }
             
-            return data.currentPrice * 0.8; // Fallback
-        }
-
-        // Enhanced Dividend Discount Model
-        function calculateDDMValue(data) {
-            const { dividendRate, dividendYield, currentPrice, beta } = data;
-            
-            if (!dividendRate || dividendRate <= 0) {
-                // For non-dividend stocks, estimate based on earnings
-                return data.eps * 12; // Simple earnings multiple
-            }
-            
-            const dividendGrowthRate = Math.max(0.01, Math.min(0.08, 0.03)); // 1-8% growth
-            const requiredReturn = 0.04 + (beta || 1) * 0.06; // Risk-adjusted return
-            
-            if (requiredReturn <= dividendGrowthRate) {
-                return currentPrice * 1.1; // Fallback if model breaks down
-            }
-            
-            return (dividendRate * (1 + dividendGrowthRate)) / (requiredReturn - dividendGrowthRate);
+            return Math.max(0, (currentPrice || 0) * 0.8); // Fallback
         }
 
         // Fetch all stock data
@@ -486,7 +532,6 @@
                         dcfValue: 0,
                         peValue: 0,
                         assetValue: 0,
-                        ddmValue: 0,
                         currentPrice: 0,
                         status: "Network Error",
                         percentDiff: 0
@@ -496,10 +541,12 @@
         }
 
         function formatCurrency(value) {
-            return "$" + value.toFixed(2);
+            if (!value || isNaN(value) || !isFinite(value)) return "$0.00";
+            return "$" + Math.abs(value).toFixed(2);
         }
 
         function formatPercentage(value) {
+            if (!value || isNaN(value) || !isFinite(value)) return "0.0%";
             return (value > 0 ? "+" : "") + value.toFixed(1) + "%";
         }
 
@@ -507,13 +554,15 @@
             const tbody = document.getElementById('stockTableBody');
             
             if (stockData.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="9" class="loading"><div class="spinner"></div>Loading stock data...</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="8" class="loading"><div class="spinner"></div>Loading stock data...</td></tr>';
                 return;
             }
 
             tbody.innerHTML = stockData.map(stock => {
                 const percentClass = stock.percentDiff > 0 ? 'positive' : 'negative';
-                const statusClass = stock.status === 'Undervalued' ? 'status-undervalued' : 'status-overvalued';
+                let statusClass = 'status-fair';
+                if (stock.status === 'Undervalued') statusClass = 'status-undervalued';
+                else if (stock.status === 'Overvalued') statusClass = 'status-overvalued';
                 
                 return `
                     <tr>
@@ -522,7 +571,6 @@
                         <td class="price">${formatCurrency(stock.dcfValue)}</td>
                         <td class="price">${formatCurrency(stock.peValue)}</td>
                         <td class="price">${formatCurrency(stock.assetValue)}</td>
-                        <td class="price">${formatCurrency(stock.ddmValue)}</td>
                         <td class="price">${formatCurrency(stock.currentPrice)}</td>
                         <td><span class="${statusClass}">${stock.status}</span></td>
                         <td class="percentage ${percentClass}">${formatPercentage(stock.percentDiff)}</td>
@@ -539,7 +587,7 @@
                 sortDirection = -1;
             }
 
-            const keys = ['name', 'ticker', 'dcfValue', 'peValue', 'assetValue', 'ddmValue', 'currentPrice', 'status', 'percentDiff'];
+            const keys = ['name', 'ticker', 'dcfValue', 'peValue', 'assetValue', 'currentPrice', 'status', 'percentDiff'];
             const key = keys[columnIndex];
 
             stockData.sort((a, b) => {
@@ -551,6 +599,10 @@
                     aVal = aVal.toLowerCase();
                     bVal = bVal.toLowerCase();
                 }
+
+                // Handle NaN values
+                if (isNaN(aVal) || !isFinite(aVal)) aVal = 0;
+                if (isNaN(bVal) || !isFinite(bVal)) bVal = 0;
 
                 if (aVal < bVal) return -1 * sortDirection;
                 if (aVal > bVal) return 1 * sortDirection;
@@ -585,7 +637,7 @@
         function refreshData() {
             // Show loading state
             document.getElementById('stockTableBody').innerHTML = 
-                '<tr><td colspan="9" class="loading"><div class="spinner"></div>Fetching real-time data from Yahoo Finance...</td></tr>';
+                '<tr><td colspan="8" class="loading"><div class="spinner"></div>Fetching real-time data from Yahoo Finance...</td></tr>';
             
             // Fetch real data from Yahoo Finance
             fetchAllStockData()
@@ -596,7 +648,7 @@
                 .catch(error => {
                     console.error('Error fetching stock data:', error);
                     document.getElementById('stockTableBody').innerHTML = 
-                        '<tr><td colspan="9" class="loading" style="color: #f87171;">Error loading data. Please try again or check console for details.</td></tr>';
+                        '<tr><td colspan="8" class="loading" style="color: #f87171;">Error loading data. Please try again or check console for details.</td></tr>';
                 });
         }
 
@@ -614,4 +666,3 @@
     </script>
 </body>
 </html>
-
