@@ -452,14 +452,38 @@ const companyNames = {
         }
 
         function calculatePEValue(data) {
-            const { eps, peRatio, currentPrice } = data;
+            const {trailingPE, forwardPE, epsGrowth, currentPrice, epsTTM, pegRatio = null} = data;
             
-            if (!eps || eps <= 0) return currentPrice * 0.9;
+            if (!trailingPE || !forwardPE || !epsGrowth || !epsTTM) {
+                return currentPrice * 0.9;}
             
-            // Use industry median P/E or conservative estimate
-            const fairPE = Math.min(25, Math.max(12, peRatio * 0.8)); // Conservative approach
-            return eps * fairPE;
-        }
+            if (trailingPE <= 0 || forwardPE <= 0 || epsTTM <= 0) {
+                return currentPrice * 0.9;}
+            
+            let calculatedPEG;
+            
+            if (pegRatio && pegRatio > 0) {calculatedPEG = pegRatio;} 
+            else {
+                const growthRatePercent = epsGrowth * 100;
+                calculatedPEG = trailingPE / growthRatePercent;
+            }
+            
+            const expectedGrowthRate = trailingPE / calculatedPEG;
+            
+            const growthBasedFairPE = expectedGrowthRate;
+            
+            const blendedPE = (0.4 * trailingPE) + (0.6 * forwardPE);
+            
+            const fairPE = (blendedPE + growthBasedFairPE) / 2;
+            
+            const boundedFairPE = Math.min(50, Math.max(8, fairPE));
+            
+            const fairValue = epsTTM * boundedFairPE;
+            
+            const conservativeValue = fairValue * 0.8;
+            
+            return conservativeValue;
+    }
 
         function calculateAssetValue(data) {
             const { bookValue, priceToSales, totalRevenue, sharesOutstanding } = data;
@@ -637,6 +661,7 @@ const companyNames = {
     </script>
 </body>
 </html>
+
 
 
 
