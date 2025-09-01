@@ -480,9 +480,9 @@ const companyNames = {
             
             const fairValue = epsTTM * boundedFairPE;
             
-            const conservativeValue = fairValue * 0.8;
+            const peValue = fairValue * 0.8;
             
-            return conservativeValue;
+            return peValue;
     }
 
         function calculateAssetValue(data) {
@@ -505,20 +505,20 @@ const companyNames = {
             const revenuePerShare = totalRevenue ? totalRevenue / sharesOutstanding : 0;
             const eps = trailingPE;
             
-            let fairValue = 0;
+            let assetValue = 0;
             
             if (bookPerShare > 0 && roe) {
-                fairValue = bookPerShare * (1 + roe);
+                assetValue = bookPerShare * (1 + roe);
             } else if (revenuePerShare > 0) {
                 const projectedRevenue = revenuePerShare * Math.pow(1 + revenueGrowth, 5);
-                fairValue = projectedRevenue / Math.pow(1 + discountRate, 5);
+                assetValue = projectedRevenue / Math.pow(1 + discountRate, 5);
             } else if (eps > 0) {
-                fairValue = eps * 15;
+                assetValue = eps * 15;
             } else {
-                fairValue = currentPrice * 0.8; // fallback
+                assetValue = currentPrice * 0.8; // fallback
             }
             
-            return fairvalue
+            return assetValue
         }
         
         function calculateDDMValue(data) {
@@ -681,6 +681,7 @@ const companyNames = {
     </script>
 </body>
 </html>
+
 
 
 
