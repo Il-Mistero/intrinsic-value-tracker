@@ -31,7 +31,7 @@ export default async function handler(req, res) {
       sharesOutstanding: quote.defaultKeyStatistics?.sharesOutstanding || null,
       freeCashflow: quote.financialData?.freeCashflow || null,
       eps: quote.defaultKeyStatistics?.trailingEps || null,
-      epsgrowth: quote.earnings?.earningsQuarterlyGrowth || null,
+      epsgrowth: quote.defaultKeyStatistics?.earningsQuarterlyGrowth || null,
       peRatio: quote.summaryDetail?.trailingPE || null,
       forwardPE: quote.summaryDetail?.forwardPE || null,
       trailingPegRatio: quote.financialData?.trailingPegRatio || null,
@@ -51,6 +51,7 @@ export default async function handler(req, res) {
     res.status(500).json({ error: err.message });
   }
 }
+
 
 
 
