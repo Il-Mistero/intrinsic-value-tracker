@@ -33,6 +33,7 @@ export default async function handler(req, res) {
       eps: quote.defaultKeyStatistics?.trailingEps || null,
       epsgrowth: quote.defaultKeyStatistics?.earningsQuarterlyGrowth || null,
       peRatio: quote.summaryDetail?.trailingPE || null,
+      roe: quote.defaultKeyStatistics?.returnOnEquity || null,
       forwardPE: quote.summaryDetail?.forwardPE || null,
       trailingPegRatio: quote.defaultKeyStatistics?.trailingPegRatio || null,
       bookValue: quote.defaultKeyStatistics?.bookValue || null,
@@ -51,6 +52,7 @@ export default async function handler(req, res) {
     res.status(500).json({ error: err.message });
   }
 }
+
 
 
 
