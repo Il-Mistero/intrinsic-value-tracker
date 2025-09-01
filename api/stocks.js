@@ -33,7 +33,7 @@ export default async function handler(req, res) {
       eps: quote.defaultKeyStatistics?.trailingEps || null,
       peRatio: quote.summaryDetail?.trailingPE || null,
       forwardPE: quote.summaryDetail?.forwardPE || null,
-      pegRatio: quote.summaryDetail?.trailingPegRatio || null,
+      pegRatio: quote.defaultKeyStatistics?.trailingPegRatio || null,
       bookValue: quote.defaultKeyStatistics?.bookValue || null,
       totalRevenue: quote.financialData?.totalRevenue || null,
       profitMargins: quote.financialData?.profitMargins || null,
@@ -50,6 +50,7 @@ export default async function handler(req, res) {
     res.status(500).json({ error: err.message });
   }
 }
+
 
 
 
