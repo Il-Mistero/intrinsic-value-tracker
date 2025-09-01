@@ -305,34 +305,28 @@
     </div>
 
     <script>
-        // Real Yahoo Finance data integration via Vercel API
         let stockData = [];
         let sortColumn = 8;
         let sortDirection = -1; // -1 for descending, 1 for ascending
 
         const API_BASE_URL = 'https://intrinsic-value-tracker.vercel.app/api';
 
-        // Stock symbols to track
         const stockSymbols = [
             // Technology
-            'AAPL', 'MSFT', 'GOOGL', 'AMZN', 'META', 'TSLA', 'NVDA', 'NFLX', 'ADBE', 'CRM',
-            'ORCL', 'IBM', 'INTC', 'CSCO', 'QCOM', 'AMD', 'NOW', 'SNOW', 'PLTR', 'ZM',
+            'TSLA', 'NVDA',
             
             // Healthcare & Pharmaceuticals
             'JNJ', 'PFE', 'UNH', 'ABT', 'TMO', 'DHR', 'BMY', 'AMGN', 'GILD', 'BIIB',
             'MRNA', 'REGN', 'VRTX', 'ILMN', 'ISRG', 'ZTS', 'CVS', 'CI', 'HUM', 'ANTM',
             
             // Financial Services
-            'JPM', 'BAC', 'WFC', 'GS', 'MS', 'C', 'USB', 'PNC', 'TFC', 'COF',
-            'AXP', 'BLK', 'SCHW', 'CME', 'ICE', 'SPGI', 'MCO', 'MA', 'V', 'PYPL',
+            'JPM', 'BAC',
             
             // Consumer Goods & Retail
-            'WMT', 'HD', 'PG', 'KO', 'PEP', 'NKE', 'SBUX', 'MCD', 'DIS', 'COST',
-            'TGT', 'LOW', 'TJX', 'DLTR', 'ROST', 'BBY', 'GPS', 'ANF', 'UAA', 'LULU',
+            'WMT', 'HD', 'PG',
             
             // Energy & Utilities
-            'XOM', 'CVX', 'COP', 'EOG', 'SLB', 'PSX', 'VLO', 'MPC', 'OXY', 'DVN',
-            'NEE', 'DUK', 'SO', 'D', 'EXC', 'SRE', 'AEP', 'XEL', 'PEG', 'ED',
+            'XOM', 'CVX', 'COP',
             
             // Industrial & Manufacturing
             'BA', 'CAT', 'GE', 'MMM', 'HON', 'UPS', 'RTX', 'LMT', 'NOC', 'GD',
@@ -342,11 +336,7 @@
         // Company names mapping
 const companyNames = {
             // Technology
-            'AAPL': 'Apple Inc.', 'MSFT': 'Microsoft Corp.', 'GOOGL': 'Alphabet Inc.', 'AMZN': 'Amazon.com Inc.',
-            'META': 'Meta Platforms', 'TSLA': 'Tesla Inc.', 'NVDA': 'NVIDIA Corp.', 'NFLX': 'Netflix Inc.',
-            'ADBE': 'Adobe Inc.', 'CRM': 'Salesforce Inc.', 'ORCL': 'Oracle Corp.', 'IBM': 'IBM Corp.',
-            'INTC': 'Intel Corp.', 'CSCO': 'Cisco Systems', 'QCOM': 'Qualcomm Inc.', 'AMD': 'Advanced Micro Devices',
-            'NOW': 'ServiceNow Inc.', 'SNOW': 'Snowflake Inc.', 'PLTR': 'Palantir Technologies', 'ZM': 'Zoom Video',
+            'TSLA': 'Tesla Inc.', 'NVDA': 'NVIDIA Corp.',
             
             // Healthcare
             'JNJ': 'Johnson & Johnson', 'PFE': 'Pfizer Inc.', 'UNH': 'UnitedHealth Group', 'ABT': 'Abbott Laboratories',
@@ -356,25 +346,13 @@ const companyNames = {
             'CVS': 'CVS Health Corp.', 'CI': 'Cigna Corp.', 'HUM': 'Humana Inc.', 'ANTM': 'Anthem Inc.',
             
             // Financial
-            'JPM': 'JPMorgan Chase', 'BAC': 'Bank of America', 'WFC': 'Wells Fargo', 'GS': 'Goldman Sachs',
-            'MS': 'Morgan Stanley', 'C': 'Citigroup Inc.', 'USB': 'U.S. Bancorp', 'PNC': 'PNC Financial',
-            'TFC': 'Truist Financial', 'COF': 'Capital One Financial', 'AXP': 'American Express', 'BLK': 'BlackRock Inc.',
-            'SCHW': 'Charles Schwab', 'CME': 'CME Group Inc.', 'ICE': 'Intercontinental Exchange', 'SPGI': 'S&P Global',
-            'MCO': 'Moody\'s Corp.', 'MA': 'Mastercard Inc.', 'V': 'Visa Inc.', 'PYPL': 'PayPal Holdings',
+            'JPM': 'JPMorgan Chase', 'BAC': 'Bank of America',
             
             // Consumer
-            'WMT': 'Walmart Inc.', 'HD': 'Home Depot', 'PG': 'Procter & Gamble', 'KO': 'Coca-Cola Co.',
-            'PEP': 'PepsiCo Inc.', 'NKE': 'Nike Inc.', 'SBUX': 'Starbucks Corp.', 'MCD': 'McDonald\'s Corp.',
-            'DIS': 'Walt Disney Co.', 'COST': 'Costco Wholesale', 'TGT': 'Target Corp.', 'LOW': 'Lowe\'s Companies',
-            'TJX': 'TJX Companies', 'DLTR': 'Dollar Tree Inc.', 'ROST': 'Ross Stores', 'BBY': 'Best Buy Co.',
-            'GPS': 'Gap Inc.', 'ANF': 'Abercrombie & Fitch', 'UAA': 'Under Armour', 'LULU': 'Lululemon Athletica',
+            'WMT': 'Walmart Inc.', 'HD': 'Home Depot', 'PG': 'Procter & Gamble',
             
             // Energy
-            'XOM': 'Exxon Mobil', 'CVX': 'Chevron Corp.', 'COP': 'ConocoPhillips', 'EOG': 'EOG Resources',
-            'SLB': 'Schlumberger Ltd.', 'PSX': 'Phillips 66', 'VLO': 'Valero Energy', 'MPC': 'Marathon Petroleum',
-            'OXY': 'Occidental Petroleum', 'DVN': 'Devon Energy', 'NEE': 'NextEra Energy', 'DUK': 'Duke Energy',
-            'SO': 'Southern Co.', 'D': 'Dominion Energy', 'EXC': 'Exelon Corp.', 'SRE': 'Sempra Energy',
-            'AEP': 'American Electric Power', 'XEL': 'Xcel Energy', 'PEG': 'Public Service Enterprise', 'ED': 'Consolidated Edison',
+            'XOM': 'Exxon Mobil', 'CVX': 'Chevron Corp.', 'COP': 'ConocoPhillips',
             
             // Industrial
             'BA': 'Boeing Co.', 'CAT': 'Caterpillar Inc.', 'GE': 'General Electric', 'MMM': '3M Company',
@@ -384,7 +362,6 @@ const companyNames = {
             'AAL': 'American Airlines', 'LUV': 'Southwest Airlines', 'JBLU': 'JetBlue Airways', 'ALK': 'Alaska Air Group'
 };
 
-        // Fetch stock data from Vercel API
         async function fetchStockData(symbol) {
             try {
                 const response = await fetch(`${API_BASE_URL}/stocks?symbol=${symbol}`, {
@@ -461,7 +438,6 @@ const companyNames = {
             const discountRate = 0.08 + (data.beta || 1) * 0.06; // CAPM-based discount rate
             
             let dcfValue = 0;
-            // 5-year projection
             for (let year = 1; year <= 5; year++) {
                 const projectedFCF = fcfPerShare * Math.pow(1 + growthRate, year);
                 dcfValue += projectedFCF / Math.pow(1 + discountRate, year);
@@ -475,7 +451,6 @@ const companyNames = {
             return dcfValue + terminalValue;
         }
 
-        // Enhanced P/E based valuation
         function calculatePEValue(data) {
             const { eps, peRatio, currentPrice } = data;
             
@@ -486,7 +461,6 @@ const companyNames = {
             return eps * fairPE;
         }
 
-        // Enhanced asset-based valuation
         function calculateAssetValue(data) {
             const { bookValue, priceToSales, totalRevenue, sharesOutstanding } = data;
             
@@ -503,7 +477,6 @@ const companyNames = {
             return data.currentPrice * 0.8; // Fallback
         }
 
-        // Enhanced Dividend Discount Model
         function calculateDDMValue(data) {
             const { dividendRate, dividendYield, currentPrice, beta } = data;
             
@@ -664,6 +637,7 @@ const companyNames = {
     </script>
 </body>
 </html>
+
 
 
 
