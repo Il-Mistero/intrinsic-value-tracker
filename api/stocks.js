@@ -1,4 +1,3 @@
-// /pages/api/stocks.js (Next.js API route on Vercel)
 import yahooFinance from "yahoo-finance2";
 
 export default async function handler(req, res) {
@@ -9,7 +8,6 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Fetch price + financial data in one call
     const quote = await yahooFinance.quoteSummary(symbol, {
       modules: [
         "price",
@@ -23,7 +21,6 @@ export default async function handler(req, res) {
       ],
     });
 
-    // Build clean JSON for frontend
     const result = {
       symbol,
       currentPrice: quote.price?.regularMarketPrice || null,
@@ -48,3 +45,4 @@ export default async function handler(req, res) {
     res.status(500).json({ error: err.message });
   }
 }
+
