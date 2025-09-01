@@ -491,7 +491,7 @@ const companyNames = {
                 totalRevenue,
                 sharesOutstanding,
                 currentPrice,
-                netIncome,
+                trailingPE,
                 roe,
                 revenueGrowth = 0.1, // default 10%
                 discountRate = 0.1   // default 10%
@@ -503,7 +503,7 @@ const companyNames = {
             
             const bookPerShare = bookValue || 0;
             const revenuePerShare = totalRevenue ? totalRevenue / sharesOutstanding : 0;
-            const eps = netIncome && sharesOutstanding ? netIncome / sharesOutstanding : 0;
+            const eps = trailingPE;
             
             let fairValue = 0;
             
@@ -681,6 +681,7 @@ const companyNames = {
     </script>
 </body>
 </html>
+
 
 
 
