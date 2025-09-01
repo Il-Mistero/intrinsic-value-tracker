@@ -486,21 +486,41 @@ const companyNames = {
     }
 
         function calculateAssetValue(data) {
-            const { bookValue, priceToSales, totalRevenue, sharesOutstanding } = data;
+            const {
+                bookValue,
+                totalRevenue,
+                sharesOutstanding,
+                currentPrice,
+                netIncome,
+                roe,
+                revenueGrowth = 0.1, // default 10%
+                discountRate = 0.1   // default 10%
+                } = data;
             
-            if (bookValue > 0) {
-                // For asset-heavy companies, use book value with premium
-                return bookValue * 1.1;
-            } else if (totalRevenue && sharesOutstanding) {
-                // For growth companies, use revenue multiple
-                const revenuePerShare = totalRevenue / sharesOutstanding;
-                const industryPSRatio = 3; // Conservative price-to-sales ratio
-                return revenuePerShare * industryPSRatio;
+            if (!sharesOutstanding || sharesOutstanding <= 0) {
+                return currentPrice * 0.8; // fallback
             }
             
-            return data.currentPrice * 0.8; // Fallback
+            const bookPerShare = bookValue || 0;
+            const revenuePerShare = totalRevenue ? totalRevenue / sharesOutstanding : 0;
+            const eps = netIncome && sharesOutstanding ? netIncome / sharesOutstanding : 0;
+            
+            let fairValue = 0;
+            
+            if (bookPerShare > 0 && roe) {
+                fairValue = bookPerShare * (1 + roe);
+            } else if (revenuePerShare > 0) {
+                const projectedRevenue = revenuePerShare * Math.pow(1 + revenueGrowth, 5);
+                fairValue = projectedRevenue / Math.pow(1 + discountRate, 5);
+            } else if (eps > 0) {
+                fairValue = eps * 15;
+            } else {
+                fairValue = currentPrice * 0.8; // fallback
+            }
+            
+            return fairvalue
         }
-
+        
         function calculateDDMValue(data) {
             const { dividendRate, dividendYield, currentPrice, beta } = data;
             
@@ -661,6 +681,7 @@ const companyNames = {
     </script>
 </body>
 </html>
+
 
 
 
