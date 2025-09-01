@@ -1,12 +1,6 @@
 import yahooFinance from "yahoo-finance2";
 
-export default async function handler(req, res) {
-  const { symbol } = req.query;
-
-  if (!symbol) {
-    return res.status(400).json({ error: "Missing stock symbol" });
-  }
-
+async function fetchQuote(symbol) {
   try {
     const quote = await yahooFinance.quoteSummary(symbol, {
       modules: [
@@ -21,31 +15,13 @@ export default async function handler(req, res) {
       ],
     });
 
-    const result = {
-      symbol,
-      currentPrice: quote.price?.regularMarketPrice || null,
-      previousClose: quote.price?.regularMarketPreviousClose || null,
-      marketCap: quote.price?.marketCap || null,
-      sharesOutstanding: quote.defaultKeyStatistics?.sharesOutstanding || null,
-      freeCashflow: quote.financialData?.freeCashflow || null,
-      eps: quote.defaultKeyStatistics?.trailingEps || null,
-      peRatio: quote.summaryDetail?.trailingPE || null,
-      forwardPE: quote.summaryDetail?.forwardPE || null,
-      pegRatio: quote.summaryDetail?.pegRatio || null,
-      bookValue: quote.defaultKeyStatistics?.bookValue || null,
-      totalRevenue: quote.financialData?.totalRevenue || null,
-      profitMargins: quote.financialData?.profitMargins || null,
-      dividendRate: quote.summaryDetail?.dividendRate || null,
-      dividendYield: quote.summaryDetail?.dividendYield || null,
-      beta: quote.summaryDetail?.beta || null,
-      timestamp: new Date().toISOString(),
-    };
+    // Show everything with proper formatting
+    console.log(JSON.stringify(quote, null, 2));
 
-    res.status(200).json(result);
+    return quote;
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error("Error fetching quote:", err);
   }
 }
 
-
-
+fetchQuote("NFLX");
