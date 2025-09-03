@@ -8,7 +8,7 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: "Missing stock symbol" });
   }
 
-  try {
+ try {
     // Fetch price + financial data in one call
     const quote = await yahooFinance.quoteSummary(symbol, {
       modules: [
@@ -45,24 +45,8 @@ export default async function handler(req, res) {
       timestamp: new Date().toISOString(),
     };
 
-  console.log('defaultKeyStatistics:', quote.defaultKeyStatistics);
-
     res.status(200).json(result);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
