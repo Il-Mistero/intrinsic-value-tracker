@@ -383,18 +383,27 @@ const companyNames = {
                 const assetValue = calculateAssetValue(data);
                 
                 // Calculate average intrinsic value and status
-                const values = [dcfValue, peValue, assetValue].filter(v => v > 0);
+                const values = [
+                    { value: dcfValue, weight: 0.55 },
+                    { value: peValue, weight: 0.30 },
+                    { value: assetValue, weight: 0.15 }
+                ].filter(v => v.value > 0);
                 
                 let avgIntrinsicValue = 0;
                 let percentDiff = 0;
                 
                 if (values.length > 0) {
-                    avgIntrinsicValue = values.reduce((a, b) => a + b, 0) / values.length;
+                    const totalWeight = values.reduce((sum, v) => sum + v.weight, 0);
+                    
+                    avgIntrinsicValue = values.reduce((sum, v) => {
+                        return sum + (v.value * (v.weight / totalWeight));
+                    }, 0);
+
                     percentDiff = ((avgIntrinsicValue - data.currentPrice) / data.currentPrice) * 100;
                 }
                 
                 const status = Math.abs(percentDiff) < 10 ? "Fair Value" : 
-                             percentDiff > 20 ? "Undervalued" : "Overvalued";
+                    percentDiff > 20 ? "Undervalued" : "Overvalued";
 
                 return {
                     name: companyNames[symbol] || symbol,
@@ -519,8 +528,11 @@ const companyNames = {
             }
             
             return assetValue
+
         }
+
         
+        // Enhanced Dividend Discount Model
         function calculateDDMValue(data) {
             const { dividendRate, dividendYield, currentPrice, beta } = data;
             
@@ -681,6 +693,7 @@ const companyNames = {
     </script>
 </body>
 </html>
+
 
 
 
